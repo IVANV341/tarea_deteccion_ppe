@@ -78,7 +78,7 @@ st.caption("YOLO11n — RTX 4070 Ti — mAP50: 0.760")
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("⚙️ Configuración")
-    fuente = st.radio("Fuente de entrada", ["📷 Webcam", "🎬 Video", "🖼️ Imagen"])
+    fuente = st.radio("Fuente de entrada", ["🎬 Video", "🖼️ Imagen"])
     confianza = st.slider("Confianza mínima", 0.1, 1.0, CONFIANZA, 0.05)
 
     st.divider()
@@ -95,7 +95,7 @@ with st.sidebar:
 
 # ── Función de detección ───────────────────────────────────────────────────────
 def procesar_frame(frame, conf):
-    results = model(frame, conf=conf, device=0, verbose=False)
+    results = model(frame, conf=conf, device="cpu", verbose=False)
     conteo = {}
     for r in results:
         for box in r.boxes:
@@ -130,39 +130,8 @@ def mostrar_metricas(conteo):
         else:
             st.markdown(f'<div class="alerta-roja">❌ {info["emoji"]} {info["nombre"]} NO detectado</div>', unsafe_allow_html=True)
 
-# ── Webcam ─────────────────────────────────────────────────────────────────────
-if fuente == "📷 Webcam":
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.subheader("📷 Webcam en tiempo real")
-        run = st.toggle("▶️ Iniciar detección")
-        frame_placeholder = st.empty()
-
-    with col2:
-        metrics_placeholder = st.empty()
-
-    if run:
-        cap = cv2.VideoCapture(0)
-        try:
-            while run:
-                ret, frame = cap.read()
-                if not ret:
-                    st.error("No se pudo acceder a la webcam")
-                    break
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                annotated, conteo = procesar_frame(frame_rgb, confianza)
-                frame_placeholder.image(annotated, channels="RGB", use_container_width=True)
-                with metrics_placeholder.container():
-                    mostrar_metricas(conteo)
-                time.sleep(0.03)
-        finally:
-            cap.release()
-            cv2.destroyAllWindows()
-    else:
-        cv2.destroyAllWindows()
-
 # ── Video ──────────────────────────────────────────────────────────────────────
-elif fuente == "🎬 Video":
+if fuente == "🎬 Video":
     video_file = st.file_uploader("Sube un video", type=["mp4", "avi", "mov"])
     if video_file:
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
