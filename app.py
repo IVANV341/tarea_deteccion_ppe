@@ -45,13 +45,6 @@ model = cargar_modelo()
 # ── Estilos ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .metric-card {
-        background: #1e1e2e;
-        border-radius: 12px;
-        padding: 16px;
-        margin: 6px 0;
-        border-left: 4px solid #00d4aa;
-    }
     .alerta-roja {
         background: #2d1b1b;
         border-radius: 12px;
@@ -73,12 +66,12 @@ st.markdown("""
 
 # ── Título ─────────────────────────────────────────────────────────────────────
 st.title("🦺 Sistema de Detección de EPP")
-st.caption("YOLO11n — RTX 4070 Ti — mAP50: 0.760")
+st.caption("YOLO11n — mAP50: 0.760")
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("⚙️ Configuración")
-    fuente = st.radio("Fuente de entrada", ["🎬 Video", "🖼️ Imagen"])
+    fuente = st.radio("Fuente de entrada", ["📷 Cámara", "🎬 Video", "🖼️ Imagen"])
     confianza = st.slider("Confianza mínima", 0.1, 1.0, CONFIANZA, 0.05)
 
     st.divider()
@@ -130,8 +123,25 @@ def mostrar_metricas(conteo):
         else:
             st.markdown(f'<div class="alerta-roja">❌ {info["emoji"]} {info["nombre"]} NO detectado</div>', unsafe_allow_html=True)
 
+# ── Cámara ─────────────────────────────────────────────────────────────────────
+if fuente == "📷 Cámara":
+    st.info("📸 Toma una foto y el modelo detectará el EPP automáticamente")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        foto = st.camera_input("Tomar foto")
+        if foto:
+            image = Image.open(foto).convert("RGB")
+            frame = np.array(image)
+            annotated, conteo = procesar_frame(frame, confianza)
+            st.image(annotated, channels="RGB", use_container_width=True)
+    with col2:
+        if foto:
+            mostrar_metricas(conteo)
+        else:
+            st.info("Toma una foto para ver las detecciones")
+
 # ── Video ──────────────────────────────────────────────────────────────────────
-if fuente == "🎬 Video":
+elif fuente == "🎬 Video":
     video_file = st.file_uploader("Sube un video", type=["mp4", "avi", "mov"])
     if video_file:
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
